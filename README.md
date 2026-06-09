@@ -1,2 +1,0 @@
-# BolestasMontano
-Generador de boletas 

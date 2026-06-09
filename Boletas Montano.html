@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Generador de Boletas — Colegio Montano</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --navy: #1a2744;
+    --navy-light: #243459;
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --cream: #faf8f3;
+    --warm-gray: #f0ece2;
+    --border: #ddd5c0;
+    --text: #1c1c1c;
+    --muted: #6b6354;
+    --red: #c0392b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--navy);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 3px solid var(--gold);
+  }
+  .header-icon {
+    width: 42px; height: 42px;
+    background: var(--gold);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  header h1 {
+    font-family: 'Merriweather', serif;
+    font-size: 1.1rem;
+    color: #fff;
+    font-weight: 700;
+  }
+  header p { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(26,39,68,0.07);
+  }
+  .panel-header {
+    background: var(--navy);
+    color: #fff;
+    padding: 13px 18px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .panel-body { padding: 20px 18px; }
+
+  /* TYPE TABS */
+  .type-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .type-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 22px;
+  }
+  .type-tab {
+    padding: 8px 13px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--warm-gray);
+    color: var(--muted);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .type-tab:hover, .type-tab:active { border-color: var(--gold); color: var(--text); }
+  .type-tab.active {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+  }
+
+  /* FORM */
+  .form-group { margin-bottom: 14px; }
+  label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.87rem;
+    color: var(--text);
+    background: var(--cream);
+    transition: border-color 0.15s;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input:focus, textarea:focus {
+    border-color: var(--navy);
+    background: #fff;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* BUTTONS */
+  .btn-group {
+    display: flex;
+    gap: 9px;
+    margin-top: 20px;
+  }
+  .btn {
+    flex: 1;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 9px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-primary { background: var(--navy); color: #fff; }
+  .btn-primary:hover, .btn-primary:active { background: var(--navy-light); }
+  .btn-outline {
+    background: transparent;
+    border: 2px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-outline:hover, .btn-outline:active { border-color: var(--navy); color: var(--navy); }
+
+  /* PREVIEW */
+  #preview-panel { align-self: start; position: sticky; top: 16px; }
+
+  .boleta-preview {
+    font-family: 'Merriweather', serif;
+    font-size: 0.87rem;
+    line-height: 1.8;
+    color: #1c1c1c;
+  }
+  .boleta-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--navy);
+  }
+  .school-info h2 {
+    font-size: 1rem;
+    color: var(--navy);
+    font-weight: 700;
+  }
+  .school-info p {
+    font-size: 0.68rem;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    margin-top: 2px;
+  }
+  .boleta-date {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: right;
+  }
+  .type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 11px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+    font-family: 'Inter', sans-serif;
+  }
+  .badge-disciplinaria { background: #fde8e6; color: #c0392b; }
+  .badge-tarea { background: #fff3e0; color: #e67e22; }
+  .badge-academica { background: #e8f4fd; color: #2980b9; }
+  .badge-materiales { background: #e8f8f5; color: #27ae60; }
+  .badge-mejora { background: #f5eef8; color: #8e44ad; }
+
+  .boleta-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+    font-family: 'Inter', sans-serif;
+  }
+  .boleta-body {
+    font-size: 0.88rem;
+    line-height: 1.9;
+    color: #222;
+    text-align: justify;
+  }
+  .boleta-body b { color: var(--navy); }
+  .boleta-footer {
+    margin-top: 34px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .firma { text-align: center; min-width: 170px; }
+  .firma-line { border-top: 1.5px solid var(--text); margin-bottom: 5px; }
+  .firma p { font-family: 'Inter', sans-serif; font-size: 0.72rem; color: var(--muted); }
+  .nombre-firma { font-size: 0.83rem; font-weight: 700; color: var(--navy); font-family: 'Merriweather', serif; }
+
+  .empty-hint {
+    text-align: center;
+    padding: 28px 20px;
+    color: var(--muted);
+    font-size: 0.84rem;
+    line-height: 1.6;
+  }
+  .empty-hint svg { margin-bottom: 10px; opacity: 0.25; display: block; margin-left: auto; margin-right: auto; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 20px; right: 16px; left: 16px;
+    max-width: 340px;
+    margin: 0 auto;
+    background: var(--navy);
+    color: #fff;
+    padding: 11px 18px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+    z-index: 999;
+    text-align: center;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  @media (max-width: 700px) {
+    .container { grid-template-columns: 1fr; padding: 14px 10px; }
+    .form-row { grid-template-columns: 1fr; }
+    #preview-panel { position: static; }
+    .btn-group { flex-direction: column; }
+    .btn { flex: none; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">📋</div>
+  <div>
+    <h1>Generador de Boletas — Colegio Montano</h1>
+    <p>Sistema de registro académico y disciplinario</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- FORM -->
+  <div class="panel">
+    <div class="panel-header">✏️ &nbsp;Datos de la Boleta</div>
+    <div class="panel-body">
+
+      <span class="type-label">Tipo de boleta</span>
+      <div class="type-tabs" id="type-tabs">
+        <div class="type-tab active" data-type="tarea">📚 Falta de Tarea</div>
+        <div class="type-tab" data-type="academica">📝 Académica</div>
+        <div class="type-tab" data-type="disciplinaria">⚠️ Disciplinaria</div>
+        <div class="type-tab" data-type="materiales">🎒 Falta de Materiales</div>
+        <div class="type-tab" data-type="mejora">📈 Plan de Mejora</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre del Estudiante *</label>
+          <input type="text" id="f-nombre" placeholder="Ej. María García">
+        </div>
+        <div class="form-group">
+          <label>Grado *</label>
+          <input type="text" id="f-grado" placeholder="Ej. 3ro Básico">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Sección *</label>
+          <input type="text" id="f-seccion" placeholder="Ej. A">
+        </div>
+        <div class="form-group">
+          <label>Clase / Materia *</label>
+          <input type="text" id="f-clase" placeholder="Ej. Matemática">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label id="dynamic-label">Tarea / Logro que no realizó *</label>
+        <textarea id="f-motivo" placeholder="Describir la tarea/logro no realizado..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Nombre del Profesor/a *</label>
+        <input type="text" id="f-profesor" placeholder="Ej. Prof. Luis Pérez">
+      </div>
+
+      <div id="mejora-fields" style="display:none;">
+        <div class="form-group">
+          <label>Plan de Mejora acordado</label>
+          <textarea id="f-mejora-desc" placeholder="Describir el plan de mejora..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Compromisos del estudiante</label>
+          <textarea id="f-compromisos" placeholder="Compromisos que adquiere el estudiante..."></textarea>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-outline" id="btn-clear">🗑️ Limpiar</button>
+        <button class="btn btn-primary" id="btn-pdf">⬇️ Descargar PDF</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="panel" id="preview-panel">
+    <div class="panel-header">👁️ &nbsp;Vista Previa</div>
+    <div class="panel-body">
+      <div id="preview-content">
+        <div class="empty-hint">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <p>Ingresa los datos a la izquierda<br>para ver la boleta aquí.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  var currentType = 'tarea';
+  var recalcTimer = null;
+
+  var typeConfig = {
+    tarea: {
+      dynamicLabel: 'Tarea / Logro que no realizó *',
+      placeholder: 'Ej. no entregó el ejercicio de fracciones de la página 45...',
+      badgeClass: 'badge-tarea',
+      badgeText: 'Falta de Entrega de Tarea',
+      title: 'BOLETA DE FALTA ACADÉMICA — TAREA',
+      buildText: function(d) {
+        return 'Estimados padres de familia, se registra una falta académica a: ' + d.nombre + ', de ' + d.grado + ' y sección ' + d.seccion + ', en clase de ' + d.clase + ', debido a que no realizó o trabajó ' + d.motivo + '. En consecuencia, recibe el presente registro, agradecemos considerar la intervención en casa para evitar reincidencias.';
+      }
+    },
+    academica: {
+      dynamicLabel: 'Motivo de la falta *',
+      placeholder: 'Ej. no participó durante la clase, bajo rendimiento en el examen...',
+      badgeClass: 'badge-academica',
+      badgeText: 'Boleta Académica',
+      title: 'BOLETA DE FALTA ACADÉMICA',
+      buildText: function(d) {
+        return 'Estimados padres de familia, se registra una falta académica a ' + d.nombre + ' de ' + d.grado + ' sección ' + d.seccion + ' en clase de ' + d.clase + ', debido a que ' + d.motivo + '. En consecuencia, recibe el presente registro, agradecemos considerar la intervención en casa para evitar reincidencias.';
+      }
+    },
+    disciplinaria: {
+      dynamicLabel: 'Descripción de la falta disciplinaria *',
+      placeholder: 'Ej. interrumpió repetidamente la clase con conducta inapropiada...',
+      badgeClass: 'badge-disciplinaria',
+      badgeText: 'Boleta Disciplinaria',
+      title: 'BOLETA DE FALTA DISCIPLINARIA',
+      buildText: function(d) {
+        return 'Estimados padres de familia, se registra una falta disciplinaria en clase a ' + d.nombre + ', de ' + d.grado + ' sección ' + d.seccion + ', debido a que ' + d.motivo + '. En consecuencia, recibe el presente registro, agradecemos considerar la intervención en casa para evitar reincidencias.';
+      }
+    },
+    materiales: {
+      dynamicLabel: 'Material faltante *',
+      placeholder: 'Ej. no trajo el cuaderno de trabajo, regla y colores...',
+      badgeClass: 'badge-materiales',
+      badgeText: 'Falta de Materiales',
+      title: 'BOLETA DE FALTA DE MATERIALES',
+      buildText: function(d) {
+        return 'Estimados padres de familia, se registra una falta a ' + d.nombre + ' de ' + d.grado + ' sección ' + d.seccion + ' por ' + d.motivo + ', es importante que cuente con su material en clase para no atrasarse en los ejercicios y comprender bien los temas. En consecuencia, recibe el presente registro, agradecemos considerar la intervención en casa para evitar reincidencias.';
+      }
+    },
+    mejora: {
+      dynamicLabel: 'Situación actual *',
+      placeholder: 'Ej. bajo rendimiento sostenido en matemática durante el trimestre...',
+      badgeClass: 'badge-mejora',
+      badgeText: 'Plan de Mejora',
+      title: 'PLAN DE MEJORA — COMUNICADO',
+      buildText: function(d) {
+        var text = 'Estimados padres de familia, nos comunicamos con ustedes para informarles sobre la situación académica de ' + d.nombre + ', estudiante de ' + d.grado + ' sección ' + d.seccion + ', en el área de ' + d.clase + '. Se ha identificado lo siguiente: ' + d.motivo + '.';
+        if (d.mejora) text += ' En coordinación con el equipo docente, se ha establecido el siguiente plan de mejora: ' + d.mejora + '.';
+        if (d.compromisos) text += ' El estudiante asume los siguientes compromisos: ' + d.compromisos + '.';
+        text += ' Agradecemos su acompañamiento y disposición para apoyar este proceso desde el hogar.';
+        return text;
+      }
+    }
+  };
+
+  function getVal(id) {
+    var el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+
+  function getToday() {
+    return new Date().toLocaleDateString('es-GT', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function getData() {
+    return {
+      nombre:      getVal('f-nombre')       || '___________________',
+      grado:       getVal('f-grado')        || '___________',
+      seccion:     getVal('f-seccion')      || '______',
+      clase:       getVal('f-clase')        || '___________',
+      motivo:      getVal('f-motivo')       || '___________________________________',
+      prof:        getVal('f-profesor')     || '___________________',
+      mejora:      getVal('f-mejora-desc'),
+      compromisos: getVal('f-compromisos')
+    };
+  }
+
+  // ── TYPE TABS ──────────────────────────────────────────────
+  var tabsContainer = document.getElementById('type-tabs');
+
+  function activateTab(type) {
+    currentType = type;
+    var tabs = tabsContainer.querySelectorAll('.type-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      if (tabs[i].getAttribute('data-type') === type) {
+        tabs[i].classList.add('active');
+      } else {
+        tabs[i].classList.remove('active');
+      }
+    }
+    var cfg = typeConfig[type];
+    document.getElementById('dynamic-label').textContent = cfg.dynamicLabel;
+    document.getElementById('f-motivo').placeholder = cfg.placeholder;
+    document.getElementById('mejora-fields').style.display = type === 'mejora' ? 'block' : 'none';
+    updatePreview();
+  }
+
+  tabsContainer.addEventListener('click', function(e) {
+    var tab = e.target.closest('.type-tab');
+    if (tab) { activateTab(tab.getAttribute('data-type')); }
+  });
+  tabsContainer.addEventListener('touchend', function(e) {
+    var tab = e.target.closest('.type-tab');
+    if (tab) { e.preventDefault(); activateTab(tab.getAttribute('data-type')); }
+  });
+
+  // ── LIVE UPDATE ─────────────────────────────────────────────
+  var fields = ['f-nombre','f-grado','f-seccion','f-clase','f-motivo','f-profesor','f-mejora-desc','f-compromisos'];
+  fields.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', scheduleUpdate);
+    el.addEventListener('change', scheduleUpdate);
+  });
+
+  function scheduleUpdate() {
+    clearTimeout(recalcTimer);
+    recalcTimer = setTimeout(updatePreview, 80);
+  }
+
+  function updatePreview() {
+    var d = getData();
+    var cfg = typeConfig[currentType];
+    var bodyText = cfg.buildText(d);
+    var today = getToday();
+
+    // Bold key fields in preview HTML
+    function bold(val, raw) { return raw === '___________________' || raw === '___________' || raw === '______' || raw === '___________________________________' ? '<span style="border-bottom:1.5px dashed #aaa;color:#999;">' + val + '</span>' : '<b>' + val + '</b>'; }
+
+    var d2 = getData(); // re-get for HTML version
+    var bodyHTML = cfg.buildText({
+      nombre:      bold(d2.nombre === '___________________' ? '___________________' : d2.nombre, d2.nombre),
+      grado:       bold(d2.grado, d2.grado),
+      seccion:     bold(d2.seccion, d2.seccion),
+      clase:       bold(d2.clase, d2.clase),
+      motivo:      bold(d2.motivo, d2.motivo),
+      mejora:      d2.mejora,
+      compromisos: d2.compromisos
+    });
+
+    var html = '<div class="boleta-preview">'
+      + '<div class="boleta-header">'
+      +   '<div class="school-info"><h2>Colegio Montano</h2><p>Registro Oficial de Boletas</p></div>'
+      +   '<div class="boleta-date">Fecha: ' + today + '</div>'
+      + '</div>'
+      + '<span class="type-badge ' + cfg.badgeClass + '">' + cfg.badgeText + '</span>'
+      + '<div class="boleta-title">' + cfg.title + '</div>'
+      + '<div class="boleta-body">' + bodyHTML + '</div>'
+      + '<div class="boleta-footer"><div class="firma"><div class="firma-line"></div><div class="nombre-firma">' + d.prof + '</div><p>Docente responsable</p></div></div>'
+      + '</div>';
+
+    document.getElementById('preview-content').innerHTML = html;
+  }
+
+  // ── PDF GENERATION ──────────────────────────────────────────
+  document.getElementById('btn-pdf').addEventListener('click', generatePDF);
+
+  function generatePDF() {
+    if (!getVal('f-nombre')) {
+      showToast('⚠️ Ingresa al menos el nombre del estudiante', true);
+      return;
+    }
+
+    var d = getData();
+    var cfg = typeConfig[currentType];
+    var today = getToday();
+    var bodyText = cfg.buildText(d);
+
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({ unit: 'mm', format: 'letter', orientation: 'portrait' });
+
+    var marginL = 25, marginR = 25, marginT = 28;
+    var pageW = doc.internal.pageSize.getWidth();
+    var contentW = pageW - marginL - marginR;
+    var y = marginT;
+
+    // ── Header bar ──
+    doc.setFillColor(26, 39, 68);
+    doc.rect(0, 0, pageW, 18, 'F');
+    doc.setFillColor(201, 168, 76);
+    doc.rect(0, 18, pageW, 2, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Colegio Montano', marginL, 12);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Registro Oficial de Boletas', marginL, 16.5);
+    doc.setTextColor(200, 200, 200);
+    doc.text('Fecha: ' + today, pageW - marginR, 12, { align: 'right' });
+
+    y = 32;
+
+    // ── Badge ──
+    var badgeColors = {
+      'badge-tarea':         { bg: [255,243,224], text: [230,126,34]  },
+      'badge-academica':     { bg: [232,244,253], text: [41,128,185]  },
+      'badge-disciplinaria': { bg: [253,232,230], text: [192,57,43]   },
+      'badge-materiales':    { bg: [232,248,245], text: [39,174,96]   },
+      'badge-mejora':        { bg: [245,238,248], text: [142,68,173]  }
+    };
+    var bc = badgeColors[cfg.badgeClass];
+    doc.setFillColor(bc.bg[0], bc.bg[1], bc.bg[2]);
+    doc.roundedRect(marginL, y, 70, 7, 3, 3, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(bc.text[0], bc.text[1], bc.text[2]);
+    doc.text(cfg.badgeText.toUpperCase(), marginL + 4, y + 4.8);
+    y += 12;
+
+    // ── Title ──
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(26, 39, 68);
+    doc.text(cfg.title, marginL, y);
+    y += 3;
+
+    // Underline title
+    doc.setDrawColor(26, 39, 68);
+    doc.setLineWidth(0.4);
+    doc.line(marginL, y, marginL + contentW, y);
+    y += 8;
+
+    // ── Body text ──
+    // Split into sentences to allow bold for key fields
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(30, 30, 30);
+
+    // Render plain body with wrapped lines
+    var lines = doc.splitTextToSize(bodyText, contentW);
+    doc.text(lines, marginL, y, { align: 'justify', maxWidth: contentW });
+    y += (lines.length * 6) + 10;
+
+    // ── Signature ──
+    var sigX = pageW - marginR - 55;
+    if (y < 200) y = Math.max(y, 180);
+    doc.setDrawColor(30, 30, 30);
+    doc.setLineWidth(0.5);
+    doc.line(sigX, y, sigX + 55, y);
+    y += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(26, 39, 68);
+    doc.text(d.prof, sigX + 27.5, y, { align: 'center' });
+    y += 4.5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Docente responsable', sigX + 27.5, y, { align: 'center' });
+
+    // ── Save ──
+    var filename = 'Boleta_' + (getVal('f-nombre') || 'estudiante').replace(/\s+/g, '_') + '_' + currentType + '.pdf';
+    doc.save(filename);
+    showToast('✅ PDF descargado correctamente');
+  }
+
+  // ── CLEAR ───────────────────────────────────────────────────
+  document.getElementById('btn-clear').addEventListener('click', function() {
+    fields.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('preview-content').innerHTML = '<div class="empty-hint"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><p>Ingresa los datos a la izquierda<br>para ver la boleta aquí.</p></div>';
+    showToast('🗑️ Formulario limpiado');
+  });
+
+  // ── TOAST ───────────────────────────────────────────────────
+  function showToast(msg, isError) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = isError ? '#c0392b' : '#1a2744';
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 2800);
+  }
+
+  // Init
+  updatePreview();
+
+})();
+</script>
+</body>
+</html>
